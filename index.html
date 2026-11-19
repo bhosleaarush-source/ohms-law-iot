@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IoT Based Ohm's Law Experiment</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--navy:#101d35;--blue:#2563eb;--green:#16a34a;--orange:#d97706;--purple:#9333ea;--bg:#f1f5f9;--text:#172033;--muted:#64748b}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(120deg,#101d35,#1e40af);color:white;padding:32px 18px;text-align:center}header h1{margin:0 0 10px;font-size:28px}header p{margin:7px;color:#dbeafe}
+.container{max-width:1200px;margin:auto;padding:22px}.status{background:white;padding:15px 18px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;box-shadow:0 3px 12px #0000000a}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:8px}.online{background:#16a34a}.offline{background:#dc2626}
+h2{font-size:20px;margin:0 0 15px}.heading{font-size:22px;margin:25px 0 16px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:17px}
+.card,section{background:white;border-radius:14px;padding:22px;box-shadow:0 3px 14px #0000000a}.card{border-left:5px solid var(--blue);min-width:0}.card:nth-child(2){border-color:var(--green)}.card:nth-child(3){border-color:var(--orange)}.card:nth-child(4){border-color:var(--purple)}
+.card h3{margin:0;color:var(--muted);font-size:14px;letter-spacing:.4px}.value{font-size:32px;font-weight:bold;margin:15px 0 7px;overflow-wrap:anywhere}.unit,.small{font-size:13px;color:var(--muted);line-height:1.6}
+section{margin-top:22px}.details{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}.progress{height:17px;background:#e2e8f0;border-radius:20px;overflow:hidden}.bar{height:100%;width:0;background:var(--green);transition:width .3s}
+.formula{background:#eff6ff;border-radius:10px;padding:17px;line-height:1.8}.formula strong{font-size:21px;color:#1d4ed8}
+button{padding:12px 17px;border:0;border-radius:7px;cursor:pointer;color:white;background:var(--blue);font-weight:bold;margin:5px 5px 5px 0}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#475569}.danger{background:#dc2626}
+.table-wrap{overflow-x:auto;margin-top:15px}table{width:100%;border-collapse:collapse;min-width:820px}th,td{padding:12px 10px;text-align:center;border-bottom:1px solid #e2e8f0;font-size:13px}th{background:#eaf0f8}.average{background:#eff6ff;font-weight:bold}.chart{height:350px;position:relative}
+.conclusion{text-align:center;font-size:23px;font-weight:bold;color:#15803d;padding:25px 10px;background:#f0fdf4;border-radius:10px}
+footer{background:var(--navy);color:#cbd5e1;text-align:center;padding:24px;margin-top:30px;font-size:13px}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}.container{padding:13px}.value{font-size:28px}.chart{height:280px}}
+</style>
+</head>
+<body>
+<header>
+<h1>OHM'S LAW – IoT BASED EXPERIMENT</h1>
+<p>Real-Time Electrical Parameter Monitoring Using ESP32</p>
+<p>Department of Electrical Engineering</p>
+</header>
+<div class="container">
+<div class="status">
+<div><span id="statusDot" class="dot"></span><strong id="connectionStatus">Connecting to Firebase...</strong></div>
+<div class="small" id="lastUpdate">Waiting for sensor readings...</div>
+</div>
+<h2 class="heading">LIVE ELECTRICAL PARAMETER MONITORING</h2>
+<div class="grid">
+<div class="card"><h3>VOLTAGE</h3><div class="value" id="voltage">--</div><div class="unit">Volts (V RMS)</div></div>
+<div class="card"><h3>CURRENT</h3><div class="value" id="current">--</div><div class="unit">Amperes (A RMS)</div></div>
+<div class="card"><h3>REAL POWER</h3><div class="value" id="power">--</div><div class="unit">Watts (W)</div></div>
+<div class="card"><h3>RESISTANCE / IMPEDANCE RATIO</h3><div class="value" id="resistance">--</div><div class="unit">Ohms (Ω)</div></div>
+</div>
+<section>
+<h2>LOAD BANK MONITORING</h2>
+<div class="details"><strong>Connected Load: <span id="loadValue">--</span> W</strong><strong>Maximum Load: 500 W</strong></div>
+<div class="progress"><div class="bar" id="loadBar"></div></div>
+<p class="small" id="loadPercentage">Load utilization: --</p><p id="loadWarning" style="color:#dc2626;font-weight:bold"></p>
+</section>
+<section>
+<h2>OHM'S LAW CALCULATION</h2>
+<div class="formula"><strong>R = V / I</strong><p id="resistanceCalculation">Resistance calculation will appear here.</p><hr><strong>P = Real power measured in watts</strong><p id="powerCalculation">Waiting for power measurement...</p></div>
+<p class="small">Resistance is calculated from simultaneous RMS voltage and current measurements. For AC loads, this ratio represents impedance magnitude unless the load is purely resistive.</p>
+</section>
+<section>
+<h2>VOLTAGE VS CURRENT CHARACTERISTICS</h2><p class="small">Graph generated from saved experimental observations.</p><div class="chart"><canvas id="voltageCurrentChart"></canvas></div>
+</section>
+<section>
+<h2>EXPERIMENTAL OBSERVATION TABLE</h2>
+<p class="small">Adjust the autotransformer or change the load bank. Wait for readings to stabilize and click Add Observation. Each observation is saved with its date and time.</p>
+<button id="addObservation" disabled>+ Add Observation</button>
+<button class="secondary" id="downloadCSV">Download CSV</button>
+<button class="danger" id="clearHistory">Clear History</button>
+<div class="table-wrap"><table><thead><tr><th>Sr. No.</th><th>Date &amp; Time</th><th>Voltage (V)</th><th>Current (A)</th><th>Power (W)</th><th>Resistance (Ω)</th></tr></thead><tbody id="observationHistory"><tr><td colspan="6">No observations recorded yet.</td></tr></tbody><tfoot id="averageValues"></tfoot></table></div>
+</section>
+<section>
+<h2>EXPERIMENTAL CONCLUSION</h2>
+<p class="small">From the experimental observations, voltage and current are compared to verify their relationship under constant resistance conditions.</p>
+<div class="conclusion">HENCE, OHM'S LAW IS PROVED.</div>
+</section>
+</div>
+<footer>IoT Based Ohm's Law Verification<br><br>Electrical Engineering Laboratory</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// Your Firebase web app configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBQd-zdgQLzm2Cchy2A2bxo0ThTsqCvV1I",
+  authDomain: "ohms-law-iot.firebaseapp.com",
+  databaseURL: "https://ohms-law-iot-default-rtdb.firebaseio.com",
+  projectId: "ohms-law-iot",
+  storageBucket: "ohms-law-iot.firebasestorage.app",
+  messagingSenderId: "384011697823",
+  appId: "1:384011697823:web:0a24f832cad14180a96caa",
+  measurementId: "G-VYG941S2R5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const liveRef = ref(db, "live");
+const historyRef = ref(db, "observations");
+let latest = null, history = {}, user = null, chart = null;
+
+function setStatus(message, state) {
+  document.getElementById("connectionStatus").textContent = message;
+  document.getElementById("statusDot").className = "dot " + (state || "");
+}
+
+function updateDashboard(data) {
+  const v = Number(data.voltage), i = Number(data.current), p = Number(data.power);
+  if (![v,i,p].every(Number.isFinite) || v < 0 || i < 0 || p < 0) {
+    setStatus("Invalid sensor data received", "offline"); return;
+  }
+  const r = i > 0.000001 ? v / i : null;
+  latest = {voltage:v,current:i,power:p,resistance:r,timestamp:Number(data.timestamp)||Date.now()};
+  document.getElementById("voltage").textContent = v.toFixed(2);
+  document.getElementById("current").textContent = i.toFixed(3);
+  document.getElementById("power").textContent = p.toFixed(2);
+  document.getElementById("resistance").textContent = r === null ? "--" : r.toFixed(2);
+  const pct = p / 500 * 100;
+  document.getElementById("loadValue").textContent = p.toFixed(2);
+  document.getElementById("loadBar").style.width = Math.min(100,Math.max(0,pct)) + "%";
+  document.getElementById("loadPercentage").textContent = "Load utilization: " + pct.toFixed(1) + "%";
+  document.getElementById("loadWarning").textContent = p > 500 ? "WARNING: Measured load exceeds the 500 W project limit." : "";
+  document.getElementById("resistanceCalculation").textContent = r === null ? "Current is too small for a reliable resistance calculation." : `R = ${v.toFixed(2)} / ${i.toFixed(3)} = ${r.toFixed(2)} Ω`;
+  document.getElementById("powerCalculation").textContent = `Measured real power received from ESP32 = ${p.toFixed(2)} W`;
+  document.getElementById("lastUpdate").textContent = "Last data update: " + new Date(latest.timestamp).toLocaleString();
+  document.getElementById("addObservation").disabled = !user || v <= 0 || i <= 0 || r === null || p > 500;
+}
+
+function renderHistory() {
+  const body = document.getElementById("observationHistory");
+  const foot = document.getElementById("averageValues");
+  body.replaceChildren(); foot.replaceChildren();
+  const rows = Object.values(history).filter(d => d && [d.voltage,d.current,d.power,d.resistance,d.timestamp].every(x => Number.isFinite(Number(x)))).sort((a,b)=>Number(a.timestamp)-Number(b.timestamp));
+  if (!rows.length) {
+    const tr=body.insertRow(), td=tr.insertCell(); td.colSpan=6; td.textContent="No observations recorded yet.";
+    if(chart){chart.destroy();chart=null;} return;
+  }
+  const totals=[0,0,0,0];
+  rows.forEach((d,n)=>{
+    const vals=[Number(d.voltage),Number(d.current),Number(d.power),Number(d.resistance)];
+    vals.forEach((x,k)=>totals[k]+=x);
+    const tr=body.insertRow();
+    [n+1,new Date(Number(d.timestamp)).toLocaleString(),vals[0].toFixed(2),vals[1].toFixed(3),vals[2].toFixed(2),vals[3].toFixed(2)].forEach(x=>tr.insertCell().textContent=x);
+  });
+  const avg=totals.map(x=>x/rows.length), tr=foot.insertRow(); tr.className="average";
+  ["","AVERAGE ("+rows.length+" readings)",avg[0].toFixed(2),avg[1].toFixed(3),avg[2].toFixed(2),avg[3].toFixed(2)].forEach(x=>tr.insertCell().textContent=x);
+  const points=rows.map(d=>({x:Number(d.voltage),y:Number(d.current)}));
+  if(chart) chart.destroy();
+  chart=new Chart(document.getElementById("voltageCurrentChart"),{type:"scatter",data:{datasets:[{label:"Voltage vs Current",data:points,showLine:true,borderColor:"#2563eb",backgroundColor:"#2563eb",pointRadius:5,tension:0}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:true,text:"Voltage (V)"}},y:{title:{display:true,text:"Current (A)"},beginAtZero:true}}}});
+}
+
+document.getElementById("addObservation").addEventListener("click",async()=>{
+  if(!latest||!user)return;
+  try{await push(historyRef,{...latest,timestamp:Date.now()});}
+  catch(e){alert("Could not save observation: "+e.message);}
+});
+document.getElementById("clearHistory").addEventListener("click",async()=>{
+  if(!user)return;
+  if(!confirm("Delete all experimental observations?"))return;
+  try{await remove(historyRef);}catch(e){alert("Could not clear history: "+e.message);}
+});
+document.getElementById("downloadCSV").addEventListener("click",()=>{
+  const rows=Object.values(history).sort((a,b)=>Number(a.timestamp)-Number(b.timestamp));
+  if(!rows.length){alert("No observations available to download.");return;}
+  const csv=[["Sr No","Date and Time","Voltage (V)","Current (A)","Power (W)","Resistance (Ohm)"].join(","),...rows.map((d,n)=>[n+1,new Date(Number(d.timestamp)).toLocaleString(),Number(d.voltage).toFixed(2),Number(d.current).toFixed(3),Number(d.power).toFixed(2),Number(d.resistance).toFixed(2)].map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(","))].join("\n");
+  const url=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a");a.href=url;a.download="Ohms_Law_Observation_History.csv";a.click();URL.revokeObjectURL(url);
+});
+
+setStatus("Signing in to Firebase...", "");
+signInAnonymously(auth).then(cred=>{
+  user=cred.user; setStatus("Firebase connected – waiting for ESP32 data","online");
+  document.getElementById("addObservation").disabled=true;
+  onValue(liveRef,snap=>{
+    const data=snap.val();
+    if(!data){setStatus("Firebase connected – waiting for ESP32 data","online");return;}
+    updateDashboard(data);
+    if(latest)setStatus("Live data received from Firebase","online");
+  },err=>setStatus("Live data error: "+err.message,"offline"));
+  onValue(historyRef,snap=>{history=snap.val()||{};renderHistory();},err=>setStatus("History error: "+err.message,"offline"));
+}).catch(err=>setStatus("Firebase sign-in failed: "+err.message,"offline"));
+</script>
+</body>
+</html>
