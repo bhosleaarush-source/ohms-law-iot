@@ -1,0 +1,1328 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>IoT Based Ohm's Law Experiment</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+  --navy: #101d35;
+  --blue: #2563eb;
+  --green: #16a34a;
+  --orange: #d97706;
+  --purple: #9333ea;
+  --background: #f1f5f9;
+  --white: #ffffff;
+  --text: #172033;
+  --muted: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  color: var(--text);
+}
+
+/* HEADER */
+
+header {
+  background: linear-gradient(120deg, #101d35, #1e40af);
+  color: white;
+  padding: 35px 18px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0 0 12px;
+  font-size: 28px;
+}
+
+header p {
+  margin: 7px 0;
+  color: #dbeafe;
+}
+
+/* MAIN CONTAINER */
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 22px;
+}
+
+.section-heading {
+  font-size: 22px;
+  margin: 25px 0 16px;
+}
+
+/* CONNECTION STATUS */
+
+.status-panel {
+  background: white;
+  padding: 15px 18px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  box-shadow: 0 3px 12px #0000000a;
+}
+
+.status-dot {
+  display: inline-block;
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-right: 7px;
+}
+
+.status-online {
+  background: #16a34a;
+}
+
+.status-offline {
+  background: #dc2626;
+}
+
+/* LIVE CARDS */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 17px;
+}
+
+.card {
+  background: white;
+  padding: 23px;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px #0000000a;
+  border-left: 5px solid var(--blue);
+  min-width: 0;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: .5px;
+}
+
+.card .value {
+  font-size: 32px;
+  font-weight: bold;
+  margin: 16px 0 7px;
+  overflow-wrap: anywhere;
+}
+
+.card .unit {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.voltage-card { border-color: var(--blue); }
+.current-card { border-color: var(--green); }
+.power-card { border-color: var(--orange); }
+.resistance-card { border-color: var(--purple); }
+
+/* COMMON SECTIONS */
+
+section {
+  background: white;
+  padding: 23px;
+  margin-top: 22px;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px #0000000a;
+}
+
+section h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.small-text {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* LOAD MONITORING */
+
+.load-details {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.progress {
+  width: 100%;
+  height: 17px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  transition: width .3s;
+}
+
+.load-warning {
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* FORMULA */
+
+.formula-box {
+  background: #eff6ff;
+  border-radius: 10px;
+  padding: 17px;
+  margin-top: 12px;
+  line-height: 1.8;
+}
+
+.formula {
+  font-size: 21px;
+  font-weight: bold;
+  color: #1d4ed8;
+}
+
+/* BUTTONS */
+
+button {
+  padding: 12px 17px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  color: white;
+  background: var(--blue);
+  font-weight: bold;
+  margin: 5px 5px 5px 0;
+}
+
+button:hover {
+  opacity: .88;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.btn-secondary { background: #475569; }
+.btn-danger { background: #dc2626; }
+.btn-green { background: #15803d; }
+
+/* OBSERVATION TABLE */
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 17px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+th, td {
+  padding: 13px 11px;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+th {
+  background: #eaf0f8;
+  color: #172033;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+.average-row {
+  background: #eff6ff;
+  font-weight: bold;
+}
+
+.empty-row {
+  padding: 25px;
+  color: var(--muted);
+}
+
+/* GRAPH */
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 350px;
+}
+
+/* CONCLUSION */
+
+.conclusion {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: #15803d;
+  padding: 28px 10px;
+  background: #f0fdf4;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+
+/* FOOTER */
+
+footer {
+  background: var(--navy);
+  color: #cbd5e1;
+  text-align: center;
+  padding: 24px;
+  margin-top: 30px;
+  font-size: 13px;
+}
+
+/* MOBILE */
+
+@media(max-width: 850px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media(max-width: 480px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  header h1 {
+    font-size: 22px;
+  }
+
+  .container {
+    padding: 13px;
+  }
+
+  .card .value {
+    font-size: 28px;
+  }
+
+  .chart-container {
+    height: 280px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- PROJECT HEADER -->
+
+<header>
+  <h1>OHM'S LAW – IoT BASED EXPERIMENT</h1>
+
+  <p>Real-Time Electrical Parameter Monitoring Using ESP32</p>
+
+  <p>Department of Electrical Engineering</p>
+</header>
+
+<div class="container">
+
+  <!-- CONNECTION STATUS -->
+
+  <div class="status-panel">
+
+    <div>
+      <span id="statusDot" class="status-dot"></span>
+      <strong id="connectionStatus">
+        Connecting to Firebase...
+      </strong>
+    </div>
+
+    <div class="small-text" id="lastUpdate">
+      Waiting for sensor readings...
+    </div>
+
+  </div>
+
+
+  <!-- LIVE MONITORING -->
+
+  <h2 class="section-heading">
+    LIVE ELECTRICAL PARAMETER MONITORING
+  </h2>
+
+  <div class="card-grid">
+
+    <div class="card voltage-card">
+      <h3>VOLTAGE</h3>
+      <div class="value" id="voltage">--</div>
+      <div class="unit">Volts (V RMS)</div>
+    </div>
+
+    <div class="card current-card">
+      <h3>CURRENT</h3>
+      <div class="value" id="current">--</div>
+      <div class="unit">Amperes (A RMS)</div>
+    </div>
+
+    <div class="card power-card">
+      <h3>REAL POWER</h3>
+      <div class="value" id="power">--</div>
+      <div class="unit">Watts (W)</div>
+    </div>
+
+    <div class="card resistance-card">
+      <h3>RESISTANCE / IMPEDANCE RATIO</h3>
+      <div class="value" id="resistance">--</div>
+      <div class="unit">Ohms (Ω)</div>
+    </div>
+
+  </div>
+
+
+  <!-- LOAD BANK -->
+
+  <section>
+
+    <h2>LOAD BANK MONITORING</h2>
+
+    <div class="load-details">
+      <strong>
+        Connected Load:
+        <span id="loadValue">--</span> W
+      </strong>
+
+      <strong>Maximum Load: 500 W</strong>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="loadBar"></div>
+    </div>
+
+    <p id="loadPercentage" class="small-text">
+      Load utilization: --
+    </p>
+
+    <p id="loadWarning" class="load-warning"></p>
+
+  </section>
+
+
+  <!-- OHMS LAW CALCULATION -->
+
+  <section>
+
+    <h2>OHM'S LAW CALCULATION</h2>
+
+    <div class="formula-box">
+
+      <div class="formula">
+        R = V / I
+      </div>
+
+      <p id="resistanceCalculation">
+        Resistance calculation will appear here.
+      </p>
+
+      <hr>
+
+      <div class="formula">
+        P = Real power measured in watts
+      </div>
+
+      <p id="powerCalculation">
+        Waiting for power measurement...
+      </p>
+
+    </div>
+
+    <p class="small-text">
+      Resistance is calculated from the simultaneous RMS voltage
+      and current measurements. For AC loads, this ratio represents
+      impedance magnitude unless the load is purely resistive.
+    </p>
+
+  </section>
+
+
+  <!-- GRAPH -->
+
+  <section>
+
+    <h2>VOLTAGE VS CURRENT CHARACTERISTICS</h2>
+
+    <p class="small-text">
+      Graph generated from saved experimental observations.
+    </p>
+
+    <div class="chart-container">
+      <canvas id="voltageCurrentChart"></canvas>
+    </div>
+
+  </section>
+
+
+  <!-- OBSERVATION HISTORY -->
+
+  <section>
+
+    <h2>EXPERIMENTAL OBSERVATION TABLE</h2>
+
+    <p class="small-text">
+      Adjust the autotransformer or change the load bank.
+      Wait for readings to stabilize and click Add Observation.
+      Every observation will be saved with its date and time.
+    </p>
+
+    <button id="addObservation" disabled>
+      + Add Observation
+    </button>
+
+    <button class="btn-secondary" id="downloadCSV">
+      Download CSV
+    </button>
+
+    <button class="btn-danger" id="clearHistory">
+      Clear History
+    </button>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Sr. No.</th>
+            <th>Date & Time</th>
+            <th>Voltage (V)</th>
+            <th>Current (A)</th>
+            <th>Power (W)</th>
+            <th>Resistance (Ω)</th>
+          </tr>
+        </thead>
+
+        <tbody id="observationHistory">
+
+          <tr>
+            <td colspan="6" class="empty-row">
+              No observations recorded yet.
+            </td>
+          </tr>
+
+        </tbody>
+
+        <tfoot id="averageValues"></tfoot>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+  <!-- CONCLUSION -->
+
+  <section>
+
+    <h2>EXPERIMENTAL CONCLUSION</h2>
+
+    <p class="small-text">
+      From the experimental observations, voltage and current
+      are compared to verify their relationship under constant
+      resistance conditions.
+    </p>
+
+    <div class="conclusion">
+      HENCE, OHM'S LAW IS PROVED.
+    </div>
+
+  </section>
+
+</div>
+
+
+<footer>
+
+  IoT Based Ohm's Law Verification
+
+  <br><br>
+
+  Electrical Engineering Laboratory
+
+</footer>
+
+
+<!-- FIREBASE AND JAVASCRIPT -->
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getDatabase,
+  ref,
+  onValue,
+  push,
+  remove
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+import {
+  getAuth,
+  signInAnonymously
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+// ======================================
+// 1. FIREBASE CONFIGURATION
+// ======================================
+
+// REPLACE ALL VALUES BELOW WITH YOUR
+// OWN FIREBASE WEB APP CONFIGURATION.
+
+const firebaseConfig = {
+
+  apiKey: "YOUR_API_KEY",
+
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+
+  databaseURL:
+  "https://ohms-law-iot-default-rtdb.firebaseio.com",
+
+  projectId: "YOUR_PROJECT",
+
+  storageBucket: "YOUR_PROJECT.firebasestorage.app",
+
+  messagingSenderId: "YOUR_SENDER_ID",
+
+  appId: "YOUR_APP_ID"
+
+};
+
+
+// ======================================
+// 2. INITIALIZE FIREBASE
+// ======================================
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+const auth = getAuth(app);
+
+
+// ======================================
+// 3. DATABASE REFERENCES
+// ======================================
+
+const liveReference = ref(db, "live");
+
+const historyReference = ref(db, "observations");
+
+
+// ======================================
+// 4. GLOBAL VARIABLES
+// ======================================
+
+let latestReading = null;
+
+let observations = {};
+
+let voltageCurrentChart = null;
+
+let currentUser = null;
+
+
+// ======================================
+// 5. CONNECTION STATUS
+// ======================================
+
+function updateStatus(message, state) {
+
+  document.getElementById(
+    "connectionStatus"
+  ).textContent = message;
+
+  const dot = document.getElementById("statusDot");
+
+  dot.className = "status-dot";
+
+  if (state === "online") {
+    dot.classList.add("status-online");
+  }
+
+  if (state === "offline") {
+    dot.classList.add("status-offline");
+  }
+
+}
+
+
+// ======================================
+// 6. FIREBASE AUTHENTICATION
+// ======================================
+
+updateStatus("Connecting to Firebase...", "waiting");
+
+signInAnonymously(auth)
+
+.then(userCredential => {
+
+  currentUser = userCredential.user;
+
+  updateStatus("Firebase Connected", "online");
+
+  listenToLiveData();
+
+  listenToObservationHistory();
+
+})
+
+.catch(error => {
+
+  updateStatus(
+    "Authentication Failed: " + error.message,
+    "offline"
+  );
+
+  console.error(error);
+
+});
+
+
+// ======================================
+// 7. LIVE SENSOR DATA
+// ======================================
+
+function listenToLiveData() {
+
+  onValue(liveReference, snapshot => {
+
+    const data = snapshot.val();
+
+    if (!data) {
+
+      updateStatus(
+        "Connected – Waiting for ESP32 data",
+        "online"
+      );
+
+      return;
+
+    }
+
+    const voltage = Number(data.voltage);
+
+    const current = Number(data.current);
+
+    const power = Number(data.power);
+
+    if (
+      !Number.isFinite(voltage) ||
+      !Number.isFinite(current) ||
+      !Number.isFinite(power) ||
+      voltage < 0 ||
+      current < 0 ||
+      power < 0
+    ) {
+
+      updateStatus("Invalid sensor data", "offline");
+
+      return;
+
+    }
+
+    // Resistance / impedance magnitude ratio
+
+    const resistance =
+      current > 0.000001
+      ? voltage / current
+      : null;
+
+    latestReading = {
+
+      voltage: voltage,
+
+      current: current,
+
+      power: power,
+
+      resistance: resistance,
+
+      timestamp: Number(data.timestamp) || Date.now()
+
+    };
+
+
+    // Update dashboard
+
+    document.getElementById("voltage").textContent =
+      voltage.toFixed(2);
+
+    document.getElementById("current").textContent =
+      current.toFixed(3);
+
+    document.getElementById("power").textContent =
+      power.toFixed(2);
+
+    document.getElementById("resistance").textContent =
+      resistance === null
+      ? "--"
+      : resistance.toFixed(2);
+
+
+    // Load bank utilization
+
+    const load = power;
+
+    const percentage = (load / 500) * 100;
+
+    const safePercentage = Math.min(
+      100,
+      Math.max(0, percentage)
+    );
+
+    document.getElementById("loadValue").textContent =
+      load.toFixed(2);
+
+    document.getElementById("loadBar").style.width =
+      safePercentage + "%";
+
+    document.getElementById("loadPercentage").textContent =
+      "Load utilization: " + percentage.toFixed(1) + "%";
+
+
+    // Load warning
+
+    const warning =
+      document.getElementById("loadWarning");
+
+    if (load > 500) {
+
+      warning.textContent =
+        "WARNING: Measured load exceeds the 500 W project limit.";
+
+    } else {
+
+      warning.textContent = "";
+
+    }
+
+
+    // Resistance calculation
+
+    document.getElementById(
+      "resistanceCalculation"
+    ).textContent =
+
+      resistance === null
+      ? "Current is too small for a reliable resistance calculation."
+      : `R = ${voltage.toFixed(2)} / ${current.toFixed(3)} = ${resistance.toFixed(2)} Ω`;
+
+
+    // Power calculation
+
+    document.getElementById(
+      "powerCalculation"
+    ).textContent =
+
+      `Measured real power received from ESP32 = ${power.toFixed(2)} W`;
+
+
+    // Update timestamp
+
+    document.getElementById(
+      "lastUpdate"
+    ).textContent =
+
+      "Last data update: " +
+      new Date(latestReading.timestamp).toLocaleString();
+
+
+    // Enable observation button
+
+    document.getElementById(
+      "addObservation"
+    ).disabled =
+
+      !currentUser ||
+      voltage <= 0 ||
+      current <= 0 ||
+      resistance === null ||
+      load > 500;
+
+  });
+
+}
+
+
+// ======================================
+// 8. SAVE OBSERVATION HISTORY
+// ======================================
+
+document.getElementById(
+  "addObservation"
+).addEventListener("click", async () => {
+
+  if (!latestReading || !currentUser) return;
+
+  const observation = {
+
+    voltage: latestReading.voltage,
+
+    current: latestReading.current,
+
+    power: latestReading.power,
+
+    resistance: latestReading.resistance,
+
+    timestamp: Date.now()
+
+  };
+
+  try {
+
+    await push(historyReference, observation);
+
+  } catch(error) {
+
+    alert("Could not save observation: " + error.message);
+
+  }
+
+});
+
+
+// ======================================
+// 9. LISTEN TO HISTORY
+// ======================================
+
+function listenToObservationHistory() {
+
+  onValue(historyReference, snapshot => {
+
+    observations = snapshot.val() || {};
+
+    renderObservationTable();
+
+  });
+
+}
+
+
+// ======================================
+// 10. DISPLAY OBSERVATION TABLE
+// ======================================
+
+function renderObservationTable() {
+
+  const tbody = document.getElementById(
+    "observationHistory"
+  );
+
+  const averageBody = document.getElementById(
+    "averageValues"
+  );
+
+  tbody.replaceChildren();
+
+  averageBody.replaceChildren();
+
+  const entries = Object.entries(observations)
+
+    .sort((a, b) =>
+      Number(a[1].timestamp) - Number(b[1].timestamp)
+    );
+
+  if (entries.length === 0) {
+
+    const row = tbody.insertRow();
+
+    const cell = row.insertCell();
+
+    cell.colSpan = 6;
+
+    cell.className = "empty-row";
+
+    cell.textContent = "No observations recorded yet.";
+
+    if (voltageCurrentChart) {
+      voltageCurrentChart.destroy();
+      voltageCurrentChart = null;
+    }
+
+    return;
+
+  }
+
+
+  let totalVoltage = 0;
+
+  let totalCurrent = 0;
+
+  let totalPower = 0;
+
+  let totalResistance = 0;
+
+
+  entries.forEach(([key, data], index) => {
+
+    const voltage = Number(data.voltage);
+
+    const current = Number(data.current);
+
+    const power = Number(data.power);
+
+    const resistance = Number(data.resistance);
+
+    const timestamp = Number(data.timestamp);
+
+    if (
+      ![voltage, current, power, resistance, timestamp]
+      .every(Number.isFinite)
+    ) return;
+
+
+    totalVoltage += voltage;
+
+    totalCurrent += current;
+
+    totalPower += power;
+
+    totalResistance += resistance;
+
+
+    const row = tbody.insertRow();
+
+    const values = [
+
+      index + 1,
+
+      new Date(timestamp).toLocaleString(),
+
+      voltage.toFixed(2),
+
+      current.toFixed(3),
+
+      power.toFixed(2),
+
+      resistance.toFixed(2)
+
+    ];
+
+    values.forEach(value => {
+
+      const cell = row.insertCell();
+
+      cell.textContent = value;
+
+    });
+
+  });
+
+
+  // ====================================
+  // 11. AUTOMATIC AVERAGE CALCULATION
+  // ====================================
+
+  const count = entries.length;
+
+  if (count === 0) return;
+
+  const averageVoltage = totalVoltage / count;
+
+  const averageCurrent = totalCurrent / count;
+
+  const averagePower = totalPower / count;
+
+  const averageResistance = totalResistance / count;
+
+
+  const row = averageBody.insertRow();
+
+  row.className = "average-row";
+
+  const averageValues = [
+
+    "",
+
+    "AVERAGE (" + count + " readings)",
+
+    averageVoltage.toFixed(2),
+
+    averageCurrent.toFixed(3),
+
+    averagePower.toFixed(2),
+
+    averageResistance.toFixed(2)
+
+  ];
+
+  averageValues.forEach(value => {
+
+    const cell = row.insertCell();
+
+    cell.textContent = value;
+
+  });
+
+
+  // Update graph
+
+  updateGraph(entries);
+
+}
+
+
+// ======================================
+// 12. VOLTAGE VS CURRENT GRAPH
+// ======================================
+
+function updateGraph(entries) {
+
+  const points = entries
+
+    .map(([key, data]) => ({
+
+      x: Number(data.voltage),
+
+      y: Number(data.current)
+
+    }))
+
+    .filter(point =>
+      Number.isFinite(point.x) &&
+      Number.isFinite(point.y)
+    );
+
+  if (voltageCurrentChart) {
+
+    voltageCurrentChart.destroy();
+
+  }
+
+  voltageCurrentChart = new Chart(
+
+    document.getElementById("voltageCurrentChart"),
+
+    {
+
+      type: "scatter",
+
+      data: {
+
+        datasets: [{
+
+          label: "Voltage vs Current",
+
+          data: points,
+
+          showLine: true,
+
+          borderColor: "#2563eb",
+
+          backgroundColor: "#2563eb",
+
+          pointRadius: 5,
+
+          tension: 0
+
+        }]
+
+      },
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        scales: {
+
+          x: {
+
+            title: {
+
+              display: true,
+
+              text: "Voltage (V)"
+
+            }
+
+          },
+
+          y: {
+
+            title: {
+
+              display: true,
+
+              text: "Current (A)"
+
+            },
+
+            beginAtZero: true
+
+          }
+
+        }
+
+      }
+
+    }
+
+  );
+
+}
+
+
+// ======================================
+// 13. CLEAR OBSERVATION HISTORY
+// ======================================
+
+document.getElementById(
+  "clearHistory"
+).addEventListener("click", async () => {
+
+  if (!currentUser) return;
+
+  const confirmDelete = confirm(
+    "Are you sure you want to delete all experimental observations?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+
+    await remove(historyReference);
+
+  } catch(error) {
+
+    alert("Could not clear history: " + error.message);
+
+  }
+
+});
+
+
+// ======================================
+// 14. DOWNLOAD OBSERVATIONS AS CSV
+// ======================================
+
+document.getElementById(
+  "downloadCSV"
+).addEventListener("click", () => {
+
+  const entries = Object.values(observations)
+
+    .sort((a, b) =>
+      Number(a.timestamp) - Number(b.timestamp)
+    );
+
+  if (entries.length === 0) {
+
+    alert("No observations available to download.");
+
+    return;
+
+  }
+
+
+  const header = [
+
+    "Sr No",
+
+    "Date and Time",
+
+    "Voltage (V)",
+
+    "Current (A)",
+
+    "Power (W)",
+
+    "Resistance (Ohm)"
+
+  ];
+
+
+  const rows = entries.map((data, index) => [
+
+    index + 1,
+
+    new Date(Number(data.timestamp)).toLocaleString(),
+
+    Number(data.voltage).toFixed(2),
+
+    Number(data.current).toFixed(3),
+
+    Number(data.power).toFixed(2),
+
+    Number(data.resistance).toFixed(2)
+
+  ]);
+
+
+  const csv = [
+
+    header.join(","),
+
+    ...rows.map(row =>
+      row.map(value =>
+        '"' + String(value).replace(/"/g, '""') + '"'
+      ).join(",")
+    )
+
+  ].join("\n");
+
+
+  const blob = new Blob(
+
+    ["\uFEFF" + csv],
+
+    { type: "text/csv;charset=utf-8;" }
+
+  );
+
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+
+  link.href = url;
+
+  link.download = "Ohms_Law_Observation_History.csv";
+
+  link.click();
+
+  URL.revokeObjectURL(url);
+
+});
+
+</script>
+
+</body>
+</html>
